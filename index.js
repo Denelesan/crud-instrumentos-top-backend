@@ -128,6 +128,6 @@ app.post('/api/instrumentos', async (req, res) => {
 })
 
 // Iniciar el servidor y escuchar en el puerto definido
-app.listen(port,'0.0.0.0', () => {
+app.listen(port, () => {
   console.log(`Servidor escuchando en http://localhost:${port}`);
 });
