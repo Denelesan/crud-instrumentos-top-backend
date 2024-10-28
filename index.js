@@ -29,6 +29,30 @@ app.get('/api/instrumentos/tipo', async (req, res)=>{
         res.status(500).json({error: "Error al obtener los datos"})
     }
 })
+// Petición para eliminar un instrumento
+app.delete('/api/instrumentos/delete/:id_instrumento', async (req, res)=>{
+    const {id_instrumento} = req.params
+    console.log("ID recibido para eliminación:", id_instrumento);
+
+    try {
+        const result = await pool.query('DELETE FROM instrumentos.instrumentos WHERE id_instrumento = $1 RETURNING *',
+        [id_instrumento])
+
+        console.log("Resultado de la eliminación:", result);
+       if(result.rowCount === 0){
+            return res.status(404).json({error:"Instrumento no encontrado"})
+        }
+        
+        res.json(result.rows[0])
+
+    } catch (error) {
+        console.error("Error al eliminar el instrumento", error)
+        res.status(500).json({error: "Error al eliminar el instruimento"})
+    }
+
+
+})
+
 
 // Petición de marcas de instrumentos
 app.get('/api/instrumentos/marca', async (req, res)=>{
@@ -74,7 +98,7 @@ app.put('/api/instrumentos/:id_instrumento', async (req, res)=>{
             [id_instrumento,ubicacion]
         );
         if (updateInstrumentos.rows.length === 0) {
-            return res.status(404).json({ message: "Item no encontrado" });
+            return res.status(404).json({ message: "Item no encontrado"});
         }
         res.json(updateInstrumentos.rows[0])
     }
@@ -104,6 +128,6 @@ app.post('/api/instrumentos', async (req, res) => {
 })
 
 // Iniciar el servidor y escuchar en el puerto definido
-app.listen(port, () => {
+app.listen(port,'0.0.0.0', () => {
   console.log(`Servidor escuchando en http://localhost:${port}`);
 });
