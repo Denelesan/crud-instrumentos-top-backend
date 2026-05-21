@@ -1,0 +1,135 @@
+{
+    "table_name": "certificado",
+    "columns": [
+      {
+        "column_name": "fecha_certif",
+        "data_type": "date"
+      },
+      {
+        "column_name": "id_tipo_instru",
+        "data_type": "integer"
+      },
+      {
+        "column_name": "id_estado_certif",
+        "data_type": "integer"
+      },
+      {
+        "column_name": "fecha_certif",
+        "data_type": "date"
+      },
+      {
+        "column_name": "id_tipo_instru",
+        "data_type": "integer"
+      },
+      {
+        "column_name": "id_estado_certif",
+        "data_type": "integer"
+      },
+      {
+        "column_name": "responsable",
+        "data_type": "character varying"
+      },
+      {
+        "column_name": "ruta_certif",
+        "data_type": "character varying"
+      },
+      {
+        "column_name": "responsable",
+        "data_type": "character varying"
+      },
+      {
+        "column_name": "n_certificado",
+        "data_type": "character varying"
+      },
+      {
+        "column_name": "ruta_certif",
+        "data_type": "character varying"
+      },
+      {
+        "column_name": "n_certificado",
+        "data_type": "character varying"
+      }
+    ],
+    "foreign_keys": [
+      {
+        "fk_column": "id_tipo_instru",
+        "references_table": "tipo",
+        "references_column": "id_tipo"
+      },
+      {
+        "fk_column": "id_tipo_instru",
+        "references_table": "tipo",
+        "references_column": "id_tipo"
+      },
+      {
+        "fk_column": "id_tipo_instru",
+        "references_table": "tipo",
+        "references_column": "id_tipo"
+      },
+      {
+        "fk_column": "id_tipo_instru",
+        "references_table": "tipo",
+        "references_column": "id_tipo"
+      },
+      {
+        "fk_column": "id_estado_certif",
+        "references_table": "estado_calibr",
+        "references_column": "id_estado_calibr"
+      },
+      {
+        "fk_column": "id_estado_certif",
+        "references_table": "estado_calibr",
+        "references_column": "id_estado_calibr"
+      },
+      {
+        "fk_column": "id_estado_certif",
+        "references_table": "estado_calibr",
+        "references_column": "id_estado_calibr"
+      },
+      {
+        "fk_column": "id_estado_certif",
+        "references_table": "estado_calibr",
+        "references_column": "id_estado_calibr"
+      },
+      {
+        "fk_column": "id_tipo_instru",
+        "references_table": "tipo",
+        "references_column": "id_tipo"
+      },
+      {
+        "fk_column": "id_tipo_instru",
+        "references_table": "tipo",
+        "references_column": "id_tipo"
+      },
+      {
+        "fk_column": "id_tipo_instru",
+        "references_table": "tipo",
+        "references_column": "id_tipo"
+      },
+      {
+        "fk_column": "id_tipo_instru",
+        "references_table": "tipo",
+        "references_column": "id_tipo"
+      },
+      {
+        "fk_column": "id_estado_certif",
+        "references_table": "estado_calibr",
+        "references_column": "id_estado_calibr"
+      },
+      {
+        "fk_column": "id_estado_certif",
+        "references_table": "estado_calibr",
+        "references_column": "id_estado_calibr"
+      },
+      {
+        "fk_column": "id_estado_certif",
+        "references_table": "estado_calibr",
+        "references_column": "id_estado_calibr"
+      },
+      {
+        "fk_column": "id_estado_certif",
+        "references_table": "estado_calibr",
+        "references_column": "id_estado_calibr"
+      }
+    ]
+  }

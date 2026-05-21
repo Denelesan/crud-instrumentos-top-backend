@@ -1,7 +1,8 @@
 // Importar Express
 const express = require('express');
 const cors = require('cors');
-const { Pool } = require('pg');
+const { Pool, Query } = require('pg');
+const { ApartmentOutlined } = require('@ant-design/icons');
 const app = express();
 require('dotenv').config();
 const port = process.env.PORT || 5000; // Puerto en el que el servidor escuchará
@@ -350,7 +351,7 @@ app.put('/api/calibration/:id_calibration', async (req, res)=>{
     }
 })
 
-// Ruta para realizar una petición de las epatas de un hito de calibración
+// Ruta para realizar una petición de las etapas de un hito de calibración
 app.get('/api/calibration_etapas', async (req, res)=>{
     try {
         const result = await pool.query('SELECT * FROM instrumentos.etapas_calibr');
@@ -463,6 +464,172 @@ app.put('/api/instrumento/:id_instrumento', async (req, res)=>{
             return res.status(404).json({ message: "Item no encontrado"});
         }
         res.json(updateInstrumento.rows[0])
+    }
+    catch (err) {
+        console.error(err.message);
+        console.error("Error detallado:", err);
+        res.status(500).send("Error en la actualización")
+    }
+})
+
+
+// Ruta para realizar una petición del historial de calibraciones de un instrumento.
+app.get('/api/instrumento/calibraciones/:id_instrumento', async (req, res)=>{
+    const {id_instrumento} = req.params
+    try {
+        const result = await pool.query('SELECT * FROM instrumentos.v_instrumentos_ingresos_calibr WHERE id_instrumento=$1', [id_instrumento])
+        res.json(result.rows)
+    } catch (error) {
+        console.log("Error al obtener los ingresos a calibración del instrumento", error)
+        res.status(500).json({error: "Error al obtener el ingresos a calibración del instrumento"})
+    }
+
+})
+
+// Ruta para realizar una petición de las etapas de un hito de calibración
+app.get('/api/certificado_estado', async (req, res)=>{
+    try {
+        const result = await pool.query('SELECT * FROM instrumentos.estado_calibr');
+        res.json(result.rows)
+    } catch (err){
+        console.log("Error al obtener el estado de un certificado de calibración", err)
+        res.status(500).json({error: "Error al obtener los datos de los estados de calibración"})
+    }
+})
+
+// Ruta para agregar un certificado de calibración
+app.post('/api/calibration/agregar_certificado', async (req, res) => {
+    try {
+        const {n_certificado, id_tipo_instru, id_estado_certif, fecha_certif, responsable} = req.body //datos que recibimos desde el fronted
+        const newCertificado = await pool.query(
+            'INSERT INTO instrumentos.certificado(n_certificado, id_tipo_instru, id_estado_certif, fecha_certif, responsable) VALUES ($1, $2,$3,$4,$5) RETURNING *',
+            [n_certificado, id_tipo_instru, id_estado_certif, fecha_certif, responsable]
+        )
+        
+        let certificado;
+        if (Number(id_tipo_instru)===1) {
+            certificado = await pool.query(
+                'INSERT INTO instrumentos.certificado_gps(n_certificado_g,id_tipo) VALUES ( $1, $2) RETURNING *',
+                [n_certificado, id_tipo_instru]
+            )
+        }       
+
+        if (Number(id_tipo_instru)===2) {
+            certificado = await pool.query(
+                'INSERT INTO instrumentos.certificado_et(n_certificado_e,id_tipo) VALUES ( $1, $2) RETURNING *',
+                [n_certificado, id_tipo_instru]
+            )
+        } 
+        if (Number(id_tipo_instru)===3) {
+            certificado = await pool.query(
+                'INSERT INTO instrumentos.certificado_nivel(n_certificado_n,id_tipo) VALUES ( $1, $2) RETURNING *',
+                [n_certificado, id_tipo_instru]
+            )
+        } 
+        console.log(certificado)
+        res.json({
+            newCertificado:newCertificado.rows[0],
+            certificado: certificado?.rows[0] || null
+        })
+    } catch (error) {
+        console.error("Error al agregar el certificado", error)
+        if (error.code === '23505'){
+            return res.status(400).json({
+                message:"El nº de certificado ya existe"
+            })
+        }
+        return res.status(400).json({
+            message: "Error al agregar el certificado",
+            detail: error.message
+        });
+          
+    }
+
+})
+
+// Ruta para actualizar la información de una solicitud de calibración (tabla intermedia instrumento_calibr)
+app.put('/api/calibration/solicitud/:id_instru_calibr', async (req, res)=>{
+    const {id_instru_calibr} = req.params;
+    const {n_certificado, fecha_ingreso, fecha_entrega, precio_calibr_instru} = req.body
+    //console.log("ID URL:", id_instrumento);
+    //console.log("Body:", req.body);
+    try {
+        const updateInstrumentoCalibration = await pool.query(
+            'UPDATE instrumentos.instrumento_calibr SET n_certificado= $2,fecha_ingreso=$3, fecha_entrega=$4, precio_calibr_instru=$5 WHERE id_instru_calibr= $1 RETURNING *',
+            [id_instru_calibr, n_certificado, fecha_ingreso, fecha_entrega, precio_calibr_instru]
+        );
+        if (updateInstrumentoCalibration.rows.length === 0) {
+            return res.status(404).json({ message: "Item no encontrado"});
+        }
+        res.json(updateInstrumentoCalibration.rows[0])
+    }
+    catch (err) {
+        console.error(err.message);
+        console.error("Error detallado:", err);
+        res.status(500).send("Error en la actualización")
+    }
+})
+
+//Ruta para obtener la información de detalle del certificado y calibración de instrumentos topográficos
+app.get('/api/instrumento/calibraciones/detalle/:id_instrumento/:n_certificado', async (req, res)=>{
+    const {id_instrumento,n_certificado} = req.params
+    console.log("PARAMS:", req.params);
+    try {
+        const result = await pool.query('SELECT * FROM instrumentos.v_info_calibracion_instrumentos WHERE id_instrumento=$1 AND n_certificado=$2', [id_instrumento,n_certificado])
+        res.json(result.rows)
+        console.log("Se ha ejecutado la petición de detalle de certificado")
+    } 
+    catch (error) {
+        console.log("Error al obtener los ingresos a calibración del instrumento", error)
+        res.status(500).json({error: "Error al obtener el ingresos a calibración del instrumento"})
+    }
+
+})
+
+// Ruta para actualizar la información de calibración de un instrumento topográfico
+app.put('/api/instrumento/calibraciones/certificado/:id_instru_calibr', async (req, res)=>{
+    const {id_instru_calibr} = req.params;
+    const {n_certificado, id_tipo ,fecha_entrega, id_estado_certif, fecha_certif, responsable_certif,responsable_calibr,prec_dist_gps, prec_alt_gps,fecha_calibr,prec_dist_cp_et,prec_ang_hz_et, prec_ang_vert_et, prec_dist_sp_et, prec_nivel} = req.body
+    //console.log("ID URL:", id_instrumento);
+    //console.log("Body:", req.body);
+    try {
+        const updateInstrumentoCalibration2 = await pool.query(
+            'UPDATE instrumentos.instrumento_calibr SET fecha_entrega=$2 WHERE id_instru_calibr= $1 RETURNING *',
+            [id_instru_calibr, fecha_entrega]
+        );
+        if (updateInstrumentoCalibration2.rows.length === 0) {
+            return res.status(404).json({ message: "Item no encontrado"});
+        }
+        
+        const updateCertificadoCalibration = await pool.query(
+            'UPDATE instrumentos.certificado SET id_estado_certif=$3, fecha_certif=$4, responsable=$5 WHERE n_certificado= $1 AND id_tipo_instru=$2 RETURNING *',
+            [n_certificado, id_tipo, id_estado_certif, fecha_certif, responsable_certif ]
+        )
+        if (updateCertificadoCalibration.rows.length === 0) {
+            return res.status(404).json({ message: "Item de Certificado no encontrado"});
+        }
+        let certificadoCalibracion;
+        if(Number(id_tipo)===1){
+            certificadoCalibracion = await pool.query(
+                'UPDATE instrumentos.certificado_gps SET prec_dist=$1, prec_altura=$2, fecha_calibr=$3, responsable=$4 WHERE n_certificado_g=$5 RETURNING *',
+            [prec_dist_gps, prec_alt_gps,fecha_calibr, responsable_calibr, n_certificado])
+        }
+        if(Number(id_tipo)===2){
+            certificadoCalibracion = await pool.query(
+                'UPDATE instrumentos.certificado_et SET prec_dist_cp=$1,prec_ang_hz=$2, prec_ang_vert=$3, prec_dist_sp=$4, fecha_calibr=$5, responsable=$6 WHERE n_certificado_e=$7 RETURNING *',
+            [prec_dist_cp_et,prec_ang_hz_et, prec_ang_vert_et, prec_dist_sp_et,fecha_calibr, responsable_calibr,n_certificado])
+        }
+
+        if(Number(id_tipo)===3){
+            certificadoCalibracion = await pool.query(
+                'UPDATE instrumentos.certificado_nivel SET precision=$1, fecha_calibr=$2, responsable=$3 WHERE n_certificado_n=$4 RETURNING *',
+            [prec_nivel,fecha_calibr, responsable_calibr, n_certificado])
+        }
+        res.json({
+            instrumento_calibracion:updateInstrumentoCalibration2.rows[0],
+            certificado: updateCertificadoCalibration.rows[0],
+            calibracion: certificadoCalibracion?.rows[0]|| null}
+        )
     }
     catch (err) {
         console.error(err.message);
