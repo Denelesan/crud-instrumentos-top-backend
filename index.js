@@ -1921,6 +1921,96 @@ app.get('/api/calibracion/:cod_certificado/archivos/zip', async (req, res) => {
 });
 
 
+//Api para generar archivos ZIP del hito de verificación
+app.get('/api/verificacion/:id_verificacion/archivos/zip', async (req, res) => {
+
+    const archiverModule = await import("archiver");
+    const { ZipArchive } = await import("archiver");
+
+    const { id_verificacion } = req.params;
+
+    try {
+
+        // Buscar los archivos asociados a la calibración
+        const resultado = await pool.query(`
+            SELECT
+                id_archivo,
+                nombre_original,
+                ruta_archivo
+            FROM instrumentos.verificacion_archivos
+            WHERE id_verificacion = $1
+        `, [id_verificacion]);
+
+        if (resultado.rowCount === 0) {
+            return res.status(404).json({
+                message: "El hito de verificacion no tiene archivos asociados"
+            });
+        }
+
+
+        // Nombre del ZIP
+        const nombreZip = `verificacion_${id_verificacion}.zip`;
+
+        res.attachment(nombreZip);
+
+        // Crear ZIP
+        const archive = new ZipArchive({
+            zlib: { level: 9 }
+        });
+
+        // Manejo de errores del ZIP
+        archive.on('error', (error) => {
+            console.error("Error creando ZIP:", error);
+
+            if (!res.headersSent) {
+                res.status(500).json({
+                    message: "Error al generar el archivo ZIP"
+                });
+            }
+        });
+
+        // Enviar ZIP directamente al navegador
+        archive.pipe(res);
+
+        // Agregar archivos
+        for (const archivo of resultado.rows) {
+
+            const rutaArchivo = path.resolve(archivo.ruta_archivo);
+
+            // Verificar que exista físicamente
+            if (fs.existsSync(rutaArchivo)) {
+
+                archive.file(rutaArchivo, {
+                    name: archivo.nombre_original
+                });
+
+            } else {
+
+                console.warn(
+                    `Archivo no encontrado: ${rutaArchivo}`
+                );
+
+            }
+        }
+
+        // Finalizar ZIP
+        await archive.finalize();
+
+    } catch (error) {
+
+        console.error(error);
+
+        if (!res.headersSent) {
+            res.status(500).json({
+                message: "Error al descargar los archivos"
+            });
+        }
+
+    }
+
+});
+
+
 //Crea una cuenta pendiente, con rol consulta, y nunca acepta un rol enviado por el cliente.
 app.post('/api/auth/registro', async (req, res) => {
     const { nombre, usuario, password } = req.body;
